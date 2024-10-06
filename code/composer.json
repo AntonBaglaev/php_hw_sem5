@@ -1,0 +1,12 @@
+{
+    "name": "geekbrains/application1",
+    "autoload": {
+        "psr-4": {
+            "Geekbrains\\Application1\\": "src/"
+        }
+    },
+    "require": {
+        "twig/twig": "^3.0",
+        "symfony/asset": "^7.1"
+    }
+}
