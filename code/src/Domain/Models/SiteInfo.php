@@ -1,6 +1,6 @@
 <?php
 
-namespace Geekbrains\Application1\Models;
+namespace Geekbrains\Application1\Domain\Models;
 
 class SiteInfo
 {

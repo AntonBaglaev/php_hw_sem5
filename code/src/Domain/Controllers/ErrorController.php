@@ -1,7 +1,7 @@
 <?php
 
-namespace Geekbrains\Application1\Controllers;
-use Geekbrains\Application1\Render;
+namespace Geekbrains\Application1\Domain\Controllers;
+use Geekbrains\Application1\Application\Render;
 
 class ErrorController
 {

@@ -1,9 +1,9 @@
 <?php
 
-namespace Geekbrains\Application1\Controllers;
+namespace Geekbrains\Application1\Domain\Controllers;
 
-use Geekbrains\Application1\Models\Phone;
-use Geekbrains\Application1\Render;
+use Geekbrains\Application1\Application\Render;
+use Geekbrains\Application1\Domain\Models\Phone;
 
 class AboutController
 {
