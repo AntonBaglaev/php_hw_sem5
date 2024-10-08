@@ -23,28 +23,23 @@ class Render {
 
     public function renderPage(string $contentTemplateName = 'page-index.twig', array $templateVariables = []) {
         $template = $this->environment->load('main.twig');
-
         $templateVariables['content_template_name'] = $contentTemplateName;
         $templateVariables['random_int'] = rand(1, 10000);
         $templateVariables['style'] = file_get_contents('src/Domain/Views/style.css');
-
         return $template->render($templateVariables);
     }
 
     public static function renderExceptionPage(Exception $exception): string {
-        $contentTemplateName = "error.twig";
-        $viewFolder = '/src/Domain/Views/';
-
-        $loader = new FilesystemLoader($_SERVER['DOCUMENT_ROOT'] . $viewFolder);
-        $environment = new Environment($loader, [
-//            'cache' => $_SERVER['DOCUMENT_ROOT'].'/cache/',
-        ]);
-
-        $template = $environment->load('main.twig');
-
-        $templateVariables['content_template_name'] = $contentTemplateName;
-        $templateVariables['error_message'] = $exception->getMessage();
-
-        return $template->render($templateVariables);
+        $render = new Render();
+        return $render->renderPage('error.twig', ['error_message' => $exception->getMessage()]);
     }
+
+    public function renderPageWithForm(string $contentTemplateName = 'page-index.twig', array $templateVariables = []) {
+        $_SESSION['csrf_token'] = bin2hex(random_bytes(32));
+        $templateVariables['csrf_token'] = $_SESSION['csrf_token'];
+        return $this->renderPage($contentTemplateName, $templateVariables);
+    }
+
+
+
 }

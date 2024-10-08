@@ -6,18 +6,20 @@
         <link href="style.css" rel="stylesheet" >
     </head>
     <body class="body">
-{#    <nav>#}
-{#        <a href="/">Главная</a>#}
-{#        <a href="/user">Пользователи</a>#}
-{#        <a href="/about">О нас</a>#}
-{#    </nav>#}
+
     {% include 'header.twig' %}
     <div class="container">
         <div class="box-left">
-            <p>Пункт 1</p>
-            <p>Пункт 2</p>
+            <ul>
+                <li><a href="/">Главная страница</a></li>
+                <li><a href="/user/auth">Авторизация</a></li>
+                <li><a href="/user">Список пользователей</a></li>
+            </ul>
         </div>
         <div class="box-right">
+            {% if islogin %}
+                <p>Добро пожаловать, {{ username }}</p>
+            {% endif %}
             {% include content_template_name %}
         </div>
     </div>

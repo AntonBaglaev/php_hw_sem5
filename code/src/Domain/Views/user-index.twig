@@ -1,7 +1,25 @@
 <p>Список пользователей в хранилище</p>
 
-<ul id="navigation">
-    {% for user in users %}
-        <li>{{ user.getUserName() }}. День рождения: {{ user.getUserBirthday() | date('d.m.Y') }}</li>
-    {% endfor %}
+<ul>
+        {% for user in users %}
+                <div class="user-container">
+                        <li class="user-info">{{ user.getUserName() }} {{ user.getUserLastName() }}. День рождения: {{ user.getUserBirthday() | date('d-m-Y') }}</li>
+                        <form action="/user/edit/" method="post">
+                                <input type="hidden" name="id" value="{{ user.getUserId() }}">
+                                <input type="hidden" name="login" value="{{ user.getUserLogin() }}">
+                                <input type="hidden" name="name" value="{{ user.getUserName() }}">
+                                <input type="hidden" name="lastname" value="{{ user.getUserLastName() }}">
+                                <input type="hidden" name="birthday" value="{{ user.getUserBirthday() }}">
+                                <input type="hidden" name="password" value="{{ user.getUserPasswordHash() }}">
+                                <input type="submit" value="Редактировать">
+                        </form>
+                        <form action="/user/delete/" method="post">
+                                <input type="hidden" name="id" value="{{ user.getUserId() }}">
+                                <input type="submit" value="Удалить">
+                        </form>
+                </div>
+        {% endfor %}
+        <form action="/user/create/" method="post">
+                <input type="submit" value="Сoздать пользователя">
+        </form>
 </ul>
