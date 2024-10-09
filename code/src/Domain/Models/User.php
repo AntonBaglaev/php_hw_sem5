@@ -3,6 +3,7 @@
 namespace Geekbrains\Application1\Domain\Models;
 
 use Geekbrains\Application1\Application\Application;
+use Geekbrains\Application1\Application\Auth;
 use Geekbrains\Application1\Infrastructure\Storage;
 
 class User {
@@ -127,7 +128,7 @@ class User {
         $sql = "UPDATE users SET user_name = :user_name, user_lastname = :user_lastname, user_birthday_timestamp = :user_birthday WHERE id_user = :id";
         $handler = Application::$storage->get()->prepare($sql);
         $handler->execute([
-            'id' => $this->idUser,
+            'id' => $this->id_user,
             'user_name' => $this->userName,
             'user_lastname' => $this->userLastName,
             'user_birthday' => $this->userBirthday
