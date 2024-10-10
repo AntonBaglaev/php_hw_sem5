@@ -6,22 +6,22 @@ use Geekbrains\Application1\Application\Application;
 use Geekbrains\Application1\Application\Render;
 use Geekbrains\Application1\Domain\Models\User;
 use Geekbrains\Application1\Application\Auth;
-use Geekbrains\Application1\Domain\Controllers\PageController;
 
 
 
 class UserController extends AbstractController {
 
     protected array $actionsPermissions = [
-        'actionIndex' => ['admin', 'guest'],
-        'actionCreate' => ['admin'],
-        'actionEdit' => ['admin'],
-        'actionDelete' => ['admin'],
+        'actionHash' => ['admin'],
         'actionSave' => ['admin'],
+        'actionEdit' => ['admin'],
+        'actionIndex' => ['admin', 'guest'],
+        'actionLogout' => ['admin'],
+
+        'actionCreate' => ['admin'],
+        'actionDelete' => ['admin'],
         'actionUpdate' => ['admin']
     ];
-
-    protected array $alwaysEnabledMethods = ['actionAuth', 'actionLogin', 'actionLogout'];
 
     public function actionIndex(){
         $users = User::getAllUsersFromStorage();
@@ -44,117 +44,140 @@ class UserController extends AbstractController {
         }
     }
 
-    public function actionCreate(): string {
-        $render = new Render();
-        return $render->renderPageWithForm(
-            'user-form.twig',
-            Auth::addSessionData(
-                [
-                    'title' => 'Форма создания пользователя',
-                    'action' => 'save',
-                    'editing' => false
-                ]));
-    }
-
-    public function actionEdit(): string {
-        if(User::exists($_POST['id'])) {
-            $render = new Render();
-            return $render->renderPageWithForm(
-                'user-form.twig',
-                Auth::addSessionData(
-                    [
-                        'title' => 'Форма создания пользователя',
-                        'action' => 'update',
-                        'editing' => true,
-                        'id' => $_POST['id'],
-                        'login' => $_POST['login'],
-                        'name' => $_POST['name'],
-                        'lastname' => $_POST['lastname'],
-                        'birthday' => $_POST['birthday'],
-                        'password' => $_POST['password']
-                    ]));
-        }
-        else {
-            throw new Exception("Пользователь не существует");
-        }
-    }
-
-    public function actionDelete(): string {
-        if(User::exists($_POST['id'])) {
-            User::deleteFromStorage($_POST['id']);
-            return $this->actionIndex();
-        }
-        else {
-            throw new Exception("Пользователь не существует");
-        }
-    }
-
     public function actionSave(): string {
         if(User::validateRequestData()) {
             $user = new User();
             $user->setParamsFromRequestData();
             $user->saveToStorage();
-            return $this->actionIndex();
+
+            $render = new Render();
+
+            return $render->renderPage(
+                'user-created.twig',
+                [
+                    'title' => 'Пользователь создан',
+                    'message' => "Создан пользователь " . $user->getUserName() . " " . $user->getUserLastName()
+                ]);
         }
+
+
         else {
             throw new Exception("Переданные данные некорректны");
         }
     }
 
-    public function actionUpdate(): string {
-        if(User::validateRequestData()) {
-            $user = new User();
-            $user->setParamsFromRequestData();
-            $user->updateInStorage();
-            return $this->actionIndex();
+    public function actionDelete(): string {
+        if(User::exists($_GET['id'])) {
+            User::deleteFromStorage($_GET['id']);
+
+            header('Location: /user');
+            die();
+
         }
         else {
-            throw new Exception("Переданные данные некорректны");
+            throw new \Exception("Пользователь не существует");
         }
+    }
+
+    public function actionEdit(): string {
+        $render = new Render();
+
+
+        $action = '/user/save';
+        if(isset($_GET['id'])){
+            $userId = $_GET['id'];
+            $action = '/user/update';
+            $userData = User::getUserDataByID($userId);
+
+        }
+
+        return $render->renderPageWithForm(
+            'user-form.twig',
+            [
+                'title' => 'Форма создания пользователя',
+                'user_data'=> $userData ?? [],
+                'action' => $action
+            ]);
+    }
+
+    public function actionUpdate(): string {
+        if(User::exists($_POST['id'])) {
+            $user = new User();
+            $user->setUserId($_POST['id']);
+
+            $arrayData = [];
+
+            if(isset($_POST['name']))
+                $arrayData['user_name'] = $_POST['name'];
+
+            if(isset($_POST['lastname'])) {
+                $arrayData['user_lastname'] = $_POST['lastname'];
+            }
+
+            $user->updateUser($arrayData);
+        }
+        else {
+            throw new \Exception("Пользователь не существует");
+        }
+
+        $render = new Render();
+        return $render->renderPage(
+            'user-created.twig',
+            [
+                'title' => 'Пользователь обновлен',
+                'message' => "Обновлен пользователь " . $user->getUserId()
+            ]);
     }
 
     public function actionAuth(): string {
         $render = new Render();
         return $render->renderPageWithForm(
             'user-auth.twig',
-            Auth::addSessionData(
-                [
-                    'title' => 'Форма логина'
-                ]));
+            [
+                'title' => 'Форма логина'
+            ]);
     }
-
-    public function actionLogin(): string {
-        $result = isset($_POST['login'])
-            && isset($_POST['password'])
-            && Application::$auth->proceedAuth($_POST['login'], $_POST['password']);
-        if(!$result){
-            $render = new Render();
-            return $render->renderPageWithForm(
-                'user-auth.twig',
-                [
-                    'title' => 'Форма логина',
-                    'auth-fail' => true,
-                    'auth-error' => 'Неверные логин или пароль'
-                ]);
-        }
-        else{
-            $controller = new PageController;
-            return $controller->actionIndex();
-        }
-    }
-
-    public function actionLogout(): string {
-        session_unset();
-        $controller = new PageController;
-        return $controller->actionIndex();
-    }
-
-
 
     public function actionHash(): string {
         return Auth::getPasswordHash($_GET['pass_string']);
     }
 
+    public function actionLogin() : string {
+        $result = false;
 
+        if(isset($_POST['login']) && isset($_POST['password'])){
+            $result = Application::$auth->proceedAuth($_POST['login'], $_POST['password']);
+            if($result &&
+                isset($_POST['user-remember']) && $_POST['user-remember'] == 'remember'){
+                $token = Application::$auth->generateToken($_SESSION['auth']['id_user']);
+
+                User::setToken($_SESSION['auth']['id_user'], $token);
+            }
+        }
+
+        if(!$result){
+            $render = new Render();
+
+            return $render->renderPageWithForm(
+                'user-auth.twig',
+                [
+                    'title' => 'Форма логина',
+                    'auth-success' => false,
+                    'auth_error' => 'Неверные логин или пароль'
+                ]);
+        }
+        else{
+            header('Location: /');
+            return "";
+        }
+    }
+
+    public function actionLogout(): void {
+        User::destroyToken();
+        session_destroy();
+        unset($_SESSION['auth']);
+        header("Location: /");
+        die();
+    }
 
 }

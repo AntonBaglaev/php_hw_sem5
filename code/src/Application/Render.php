@@ -13,19 +13,31 @@ class Render {
     private Environment $environment;
 
 
+
     public function __construct(){
 
         $this->loader = new FilesystemLoader($_SERVER['DOCUMENT_ROOT'] . $this->viewFolder);
         $this->environment = new Environment($this->loader, [
-           // 'cache' => $_SERVER['DOCUMENT_ROOT'].'/cache/',
+            // 'cache' => $_SERVER['DOCUMENT_ROOT'].'/cache/',
         ]);
     }
 
-    public function renderPage(string $contentTemplateName = 'page-index.twig', array $templateVariables = []) {
+    public function renderPage(string $contentTemplateName = 'page-index.twig', array $templateVariables = []): string
+    {
         $template = $this->environment->load('main.twig');
+
         $templateVariables['content_template_name'] = $contentTemplateName;
+
         $templateVariables['random_int'] = rand(1, 10000);
         $templateVariables['style'] = file_get_contents('src/Domain/Views/style.css');
+
+        if(isset($_SESSION['auth']['user_name'])) {
+            $templateVariables['user_authorized'] = true;
+            $templateVariables['user_name'] = $_SESSION['auth']['user_name'];
+            $templateVariables['user_lastname'] = $_SESSION['auth']['user_lastname'];
+
+        }
+
         return $template->render($templateVariables);
     }
 
@@ -39,7 +51,4 @@ class Render {
         $templateVariables['csrf_token'] = $_SESSION['csrf_token'];
         return $this->renderPage($contentTemplateName, $templateVariables);
     }
-
-
-
 }
