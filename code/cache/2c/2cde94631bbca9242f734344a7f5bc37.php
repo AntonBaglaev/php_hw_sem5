@@ -12,8 +12,8 @@ use Twig\Sandbox\SecurityNotAllowedFunctionError;
 use Twig\Source;
 use Twig\Template;
 
-/* footer.twig */
-class __TwigTemplate_26bf154318a533e19c5f28b39e5c9045 extends Template
+/* auth-template.twig */
+class __TwigTemplate_3e0801f3ac2e1564bd0a65ffa1ad4d42 extends Template
 {
     private $source;
     private $macros = [];
@@ -34,17 +34,22 @@ class __TwigTemplate_26bf154318a533e19c5f28b39e5c9045 extends Template
     {
         $macros = $this->macros;
         // line 1
-        echo "<footer>
-    <p>Подвал приложения. Текущее время ";
-        // line 2
-        echo twig_escape_filter($this->env, twig_date_format_filter($this->env, "now", "h:i:s", "Europe/Moscow"), "html", null, true);
-        echo "</p>
-</footer>";
+        if ( !($context["user_authorized"] ?? null)) {
+            // line 2
+            echo "    <div class=\"col-md-3 text-end\">
+        <a href=\"/user/login/\" class=\"btn btn-primary\">Войти</a>
+    </div>
+";
+        } else {
+            // line 6
+            echo "    <p>Добро пожаловать на сайт!</p>
+";
+        }
     }
 
     public function getTemplateName()
     {
-        return "footer.twig";
+        return "auth-template.twig";
     }
 
     public function isTraitable()
@@ -54,11 +59,11 @@ class __TwigTemplate_26bf154318a533e19c5f28b39e5c9045 extends Template
 
     public function getDebugInfo()
     {
-        return array (  40 => 2,  37 => 1,);
+        return array (  45 => 6,  39 => 2,  37 => 1,);
     }
 
     public function getSourceContext()
     {
-        return new Source("", "footer.twig", "/data/mysite.local/src/Domain/Views/footer.twig");
+        return new Source("", "auth-template.twig", "/data/mysite.local/src/Domain/Views/auth-template.twig");
     }
 }

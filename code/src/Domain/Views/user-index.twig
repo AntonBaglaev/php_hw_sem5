@@ -1,25 +1,73 @@
 <p>Список пользователей в хранилище</p>
 
-<ul>
-        {% for user in users %}
-                <div class="user-container">
-                        <li class="user-info">{{ user.getUserName() }} {{ user.getUserLastName() }}. День рождения: {{ user.getUserBirthday() | date('d-m-Y') }}</li>
-                        <form action="/user/edit/" method="post">
-                                <input type="hidden" name="id" value="{{ user.getUserId() }}">
-                                <input type="hidden" name="login" value="{{ user.getUserLogin() }}">
-                                <input type="hidden" name="name" value="{{ user.getUserName() }}">
-                                <input type="hidden" name="lastname" value="{{ user.getUserLastName() }}">
-                                <input type="hidden" name="birthday" value="{{ user.getUserBirthday() }}">
-                                <input type="hidden" name="password" value="{{ user.getUserPasswordHash() }}">
-                                <input type="submit" value="Редактировать">
-                        </form>
-                        <form action="/user/delete/" method="post">
-                                <input type="hidden" name="id" value="{{ user.getUserId() }}">
-                                <input type="submit" value="Удалить">
-                        </form>
-                </div>
-        {% endfor %}
-        <form action="/user/create/" method="post">
-                <input type="submit" value="Сoздать пользователя">
-        </form>
-</ul>
+<div class="table-responsive small">
+        <table class="table table-striped table-sm">
+                <thead>
+                <tr>
+                        <th scope="col">ID</th>
+                        <th scope="col">Имя</th>
+                        <th scope="col">Фамилия</th>
+                        <th scope="col">День рождения</th>
+                        {% if isAdmin %}
+                                <th scope="col">Редактирование</th>
+                                <th scope="col">Удаление</th>
+                        {% endif %}
+                </tr>
+                </thead>
+                <tbody>
+                {% for user in users %}
+                        <tr>
+                                <td>{{ user.getUserId() }}</td>
+                                <td>{{ user.getUserName() }}</td>
+                                <td>{{ user.getUserLastName() }}</td>
+                                <td>{% if user.getUserBirthday() is not empty %}
+                                                {{ user.getUserBirthday() | date('d.m.Y') }}
+                                        {% else %}
+                                                <b>Не задан</b>
+                                        {% endif %}
+                                </td>
+                                {% if isAdmin %}
+                                        <td scope="col"><a href="/user/edit/?id_user={{ user.getUserId() }}">Редактирование</a></td>
+                                        <td scope="col"><a href="/user/delete/?id_user={{ user.getUserId() }}">Удаление</a></td>
+                                {% endif %}
+                        </tr>
+                {% endfor %}
+                </tbody>
+        </table>
+</div>
+
+<script>
+        let maxId = $('.table-responsive tbody tr:last-child td:first-child').html();
+
+        setInterval(function () {
+                $.ajax({
+                        method: 'POST',
+                        url: "/user/indexRefresh/",
+                        data: { maxId: maxId }
+                }).done(function (response) {
+                        // $('.content-template').html(response);
+
+                        let users = $.parseJSON(response);
+
+                        if(users.length != 0){
+                                for(var k in users){
+
+                                        let row = "<tr>";
+
+                                        row += "<td>" + users[k].id + "</td>";
+                                        maxId = users[k].id;
+
+                                        row += "<td>" + users[k].username + "</td>";
+                                        row += "<td>" + users[k].userlastname + "</td>";
+                                        row += "<td>" + users[k].userbirthday + "</td>";
+
+                                        row += "</tr>";
+
+                                        $('.content-template tbody').append(row);
+                                }
+
+                        }
+
+                });
+        }, 10000);
+</script>

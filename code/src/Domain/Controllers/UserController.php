@@ -12,18 +12,11 @@ use Geekbrains\Application1\Application\Auth;
 class UserController extends AbstractController {
 
     protected array $actionsPermissions = [
-        'actionHash' => ['admin'],
+        'actionHash' => ['admin', 'some'],
         'actionSave' => ['admin'],
-        'actionEdit' => ['admin'],
-        'actionIndex' => ['admin', 'guest'],
-        'actionLogout' => ['admin'],
-
-        'actionCreate' => ['admin'],
-        'actionDelete' => ['admin'],
-        'actionUpdate' => ['admin']
     ];
 
-    public function actionIndex(){
+    public function actionIndex(): string {
         $users = User::getAllUsersFromStorage();
         $render = new Render();
         if(!$users){
@@ -39,9 +32,51 @@ class UserController extends AbstractController {
                 'user-index.twig',
                 [
                     'title' => 'Список пользователей в хранилище',
+                    'users' => $users,
+                    'isAdmin' => User::isAdmin($_SESSION['id_user'] ?? null)
+
+                ]);
+        }
+    }
+
+    public function actionIndexRefresh(){
+        $limit = null;
+
+        if(isset($_POST['maxId']) && ($_POST['maxId'] > 0)){
+            $limit = $_POST['maxId'];
+        }
+
+        $users = User::getAllUsersFromStorage($limit);
+        $usersData = [];
+
+        /*
+        $render = new Render();
+
+        if(!$users){
+            return $render->renderPartial(
+                'user-empty.tpl',
+                [
+                    'title' => 'Список пользователей в хранилище',
+                    'message' => "Список пуст или не найден"
+                ]);
+        }
+        else{
+            return $render->renderPartial(
+                'user-index.tpl',
+                [
+                    'title' => 'Список пользователей в хранилище',
                     'users' => $users
                 ]);
         }
+        */
+
+        if(count($users) > 0) {
+            foreach($users as $user){
+                $usersData[] = $user->getUserDataAsArray();
+            }
+        }
+
+        return json_encode($usersData);
     }
 
     public function actionSave(): string {
@@ -67,65 +102,22 @@ class UserController extends AbstractController {
     }
 
     public function actionDelete(): string {
-        if(User::exists($_GET['id'])) {
-            User::deleteFromStorage($_GET['id']);
-
-            header('Location: /user');
-            die();
-
+        if(User::exists($_POST['id'])) {
+            User::deleteFromStorage($_POST['id']);
+            return $this->actionIndex();
         }
         else {
-            throw new \Exception("Пользователь не существует");
+            throw new Exception("Пользователь не существует");
         }
     }
 
     public function actionEdit(): string {
         $render = new Render();
 
-
-        $action = '/user/save';
-        if(isset($_GET['id'])){
-            $userId = $_GET['id'];
-            $action = '/user/update';
-            $userData = User::getUserDataByID($userId);
-
-        }
-
         return $render->renderPageWithForm(
             'user-form.twig',
             [
-                'title' => 'Форма создания пользователя',
-                'user_data'=> $userData ?? [],
-                'action' => $action
-            ]);
-    }
-
-    public function actionUpdate(): string {
-        if(User::exists($_POST['id'])) {
-            $user = new User();
-            $user->setUserId($_POST['id']);
-
-            $arrayData = [];
-
-            if(isset($_POST['name']))
-                $arrayData['user_name'] = $_POST['name'];
-
-            if(isset($_POST['lastname'])) {
-                $arrayData['user_lastname'] = $_POST['lastname'];
-            }
-
-            $user->updateUser($arrayData);
-        }
-        else {
-            throw new \Exception("Пользователь не существует");
-        }
-
-        $render = new Render();
-        return $render->renderPage(
-            'user-created.twig',
-            [
-                'title' => 'Пользователь обновлен',
-                'message' => "Обновлен пользователь " . $user->getUserId()
+                'title' => 'Форма создания пользователя'
             ]);
     }
 
@@ -147,12 +139,6 @@ class UserController extends AbstractController {
 
         if(isset($_POST['login']) && isset($_POST['password'])){
             $result = Application::$auth->proceedAuth($_POST['login'], $_POST['password']);
-            if($result &&
-                isset($_POST['user-remember']) && $_POST['user-remember'] == 'remember'){
-                $token = Application::$auth->generateToken($_SESSION['auth']['id_user']);
-
-                User::setToken($_SESSION['auth']['id_user'], $token);
-            }
         }
 
         if(!$result){
@@ -171,13 +157,4 @@ class UserController extends AbstractController {
             return "";
         }
     }
-
-    public function actionLogout(): void {
-        User::destroyToken();
-        session_destroy();
-        unset($_SESSION['auth']);
-        header("Location: /");
-        die();
-    }
-
 }
